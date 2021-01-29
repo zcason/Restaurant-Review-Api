@@ -9,7 +9,7 @@ homeRouter
     .get('/', async (req, res, next) => {
         try {
             const restaurants = await HomeService.getAllRestaurants(req.app.get('db'));
-            return res.json(restaurants)
+            return res.json(restaurants.rows)
         } catch (error) {
             next(error)
         }
@@ -21,7 +21,7 @@ homeRouter
             const restaurant = await HomeService.getRestaurantById(req.app.get('db'), req.params.restaurantId);
 
             const reviews = await HomeService.getRestaurantReviews(req.app.get('db'), req.params.restaurantId)
-            return res.json([restaurant[0], reviews])
+            return res.json([restaurant.rows[0], reviews])
         } catch (error) {
             next(error)
         }
@@ -104,7 +104,7 @@ homeRouter
                 req.app.get('db'),
                 req.params.restaurantId
             )
-            return res.status(204)
+            return res.status(204).end()
         } catch (error) {
             next(error)
         }

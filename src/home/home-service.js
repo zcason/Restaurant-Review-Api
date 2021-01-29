@@ -2,13 +2,17 @@ const xss = require('xss');
 
 const HomeService = {
     getAllRestaurants(db) {
-        return db('restaurants')
-            .select('*')
+        return db.raw(`select * from restaurants 
+            left join (select restaurant_id, COUNT(*), TRUNC(AVG(rating),1) as average_rating
+            from reviews group by restaurant_id) reviews on restaurants.id = reviews.restaurant_id;`)
+
     },
     getRestaurantById(db, id) {
-        return db('restaurants')
-            .select('*')
-            .where({ 'id': id })
+        return db.raw(`select * from restaurants 
+        left join (select restaurant_id, COUNT(*), TRUNC(AVG(rating),1) as average_rating
+        from reviews group by restaurant_id) reviews on restaurants.id = reviews.restaurant_id
+        where id = ${id};`)
+
     },
     getRestaurantReviews(db, id) {
         return db('reviews')
