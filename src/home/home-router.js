@@ -9,8 +9,7 @@ homeRouter
     .get('/', async (req, res, next) => {
         try {
             const restaurants = await HomeService.getAllRestaurants(req.app.get('db'));
-            res.json(restaurants)
-            next()
+            return res.json(restaurants)
         } catch (error) {
             next(error)
         }
@@ -20,8 +19,9 @@ homeRouter
     .get('/:restaurantId', async (req, res, next) => {
         try {
             const restaurant = await HomeService.getRestaurantById(req.app.get('db'), req.params.restaurantId);
-            res.json(restaurant)
-            next()
+
+            const reviews = await HomeService.getRestaurantReviews(req.app.get('db'), req.params.restaurantId)
+            return res.json([restaurant[0], reviews])
         } catch (error) {
             next(error)
         }
@@ -34,7 +34,7 @@ homeRouter
             name,
             location,
             price_range
-        }
+        };
 
         for (const field of ['name', 'location', 'price_range'])
             if (!req.body[field])
@@ -44,10 +44,35 @@ homeRouter
 
         try {
             const restaurant = await HomeService.postNewRestaurant(req.app.get('db'), newRestaurant);
-            res
+            return res
                 .status(201)
                 .json(HomeService.serializeRestaurant(restaurant))
+        } catch (error) {
+            next(error)
+        }
+    })
 
+homeRouter
+    .post('/:restaurantId', jsonBodyParser, async (req, res, next) => {
+        const { name, content, rating } = req.body;
+        const newReview = {
+            name,
+            content,
+            rating,
+            restaurant_id: req.params.restaurantId
+        };
+
+        for (const field of ['name', 'content', 'rating'])
+            if (!req.body[field])
+                return res.status(400).json({
+                    error: `Missing '${field}' in request body`
+                })
+
+        try {
+            const review = await HomeService.postNewReview(req.app.get('db'), newReview);
+            return res
+                .status(201)
+                .json(HomeService.serializeReview(review))
         } catch (error) {
             next(error)
         }
@@ -64,11 +89,9 @@ homeRouter
                 req.params.restaurantId,
                 restaurant
             )
-            res
+            return res
                 .status(200)
                 .json(HomeService.serializeRestaurant(updateRestaurant))
-
-            res.status(200)
         } catch (error) {
             next(error)
         }
@@ -81,7 +104,7 @@ homeRouter
                 req.app.get('db'),
                 req.params.restaurantId
             )
-            res.status(204).end()
+            return res.status(204)
         } catch (error) {
             next(error)
         }
